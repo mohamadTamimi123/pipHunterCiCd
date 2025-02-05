@@ -21,6 +21,8 @@ jobs:
           port : 7822
           script: |
             cd /cicd/pipCiCD
+            git reset --hard HEAD^
+            git pull
             git fetch
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
