@@ -18,7 +18,6 @@ services:
       PGADMIN_DEFAULT_EMAIL: user-name@domain-name.com
       PGADMIN_DEFAULT_PASSWORD: strong-password
 
-
   redis:
     image: redis:latest
     command: redis-server
@@ -37,3 +36,15 @@ services:
 
     depends_on:
       - redis
+
+
+  backend:
+    build:
+      context: ./backend/Express-app  # مسیر دایرکتوری فعلی
+      dockerfile: Dockerfile  # نام فایل Dockerfile
+    ports:
+      - "8084:8084"  # نقشه‌برداری پورت
+    volumes:
+      - .:/usr/src/app  # همگام‌سازی فایل‌های محلی
+    environment:
+      NODE_ENV: development  # می‌توانید متغیرهای دیگر نیز اضافه کنید
