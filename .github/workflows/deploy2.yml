@@ -1,0 +1,52 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # مرحله 1: چک کردن کد از مخزن
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # مرحله 2: نصب Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '22'
+
+      # مرحله 3: نصب وابستگی‌ها
+      - name: Install dependencies
+        run: npm install
+
+      # مرحله 4: نصب sshpass
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      # مرحله 5: ارسال پروژه به سرور
+      - name: Clone or Update Project on Server
+        run: |
+          sshpass -p "d9de659eeac2dfde" ssh -o StrictHostKeyChecking=no -p 7822 root@68.66.251.93 "
+          if [ -d /newCi ]; then
+              cd /newCi && git pull;
+          else
+              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /newCi;
+          fi
+          "
+
+      # مرحله 6: اجرای docker-compose up
+      - name: Manage Docker Containers
+        run: |
+          sshpass -p "d9de659eeac2dfde" ssh -o StrictHostKeyChecking=no -p 7822 root@68.66.251.93 "
+          docker stop \$(docker ps -a -q);
+          docker rm \$(docker ps -a -q);
+          cd /newCi && docker-compose up -d;
+          "
+      # مرحله 7: نصب وابستگی‌ها در سرور
+      - name: Install dependencies on server
+        run: |
+          sshpass -p "d9de659eeac2dfde" ssh -o StrictHostKeyChecking=no -p 7822 root@68.66.251.93 "cd /newCi && npm install"
