@@ -22,9 +22,7 @@ jobs:
           script: |
             mkdir /cicd/pipHunterCiCD
             cd /cicd/pipHunterCiCD
-            git reset --hard HEAD^
-            git pull
-            git fetch
+            git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
             docker-compose up -d
