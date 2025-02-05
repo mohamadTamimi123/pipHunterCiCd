@@ -24,6 +24,8 @@ jobs:
             git fetch
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
-            docker-compose up
-            # npm install  (برای نصب وابستگی های پروژه)
-            # sudo systemctl restart nginx # یا هر سرویس دیگری که پروژه شما از آن استفاده می‌کند.
+            docker-compose up -d
+            cd /backend/backend-app
+            npm install
+            npm run start:dev
+           
