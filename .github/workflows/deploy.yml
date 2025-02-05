@@ -26,7 +26,7 @@ jobs:
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
             docker-compose up -d
-            cd /pipHunterCiCD/backend/backend-app
+            cd /cicd/pipHunterCiCD/pipHunterCiCD/backend/backend-app
             npm install
             npm run start:dev
            
