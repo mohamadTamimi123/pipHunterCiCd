@@ -20,7 +20,8 @@ jobs:
           password: d9de659eeac2dfde
           port : 7822
           script: |
-            cd /cicd/pipCiCD
+            mkdir /cicd/pipHunterCiCD
+            cd /cicd/pipHunterCiCD
             git reset --hard HEAD^
             git pull
             git fetch
