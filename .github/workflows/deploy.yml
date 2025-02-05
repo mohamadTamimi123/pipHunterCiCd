@@ -1,4 +1,4 @@
-name: Deploy to Ubuntu Server
+name: Clone or Update Project on Remote Server
 
 on:
   push:
@@ -6,27 +6,19 @@ on:
       - main
 
 jobs:
-  deploy:
+  update:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Deploy to server
-        uses: appleboy/ssh-action@master
-        with:
-          host: 68.66.251.93
-          username: root
-          password: d9de659eeac2dfde
-          port : 7822
-          script: |
-            mkdir /cicd/pipHunterCiCD
-            cd /cicd/pipHunterCiCD
-            git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git
-            docker stop $(docker ps -a -q)
-            docker rm $(docker ps -a -q)
-            docker-compose up -d
-            cd /cicd/pipHunterCiCD/pipHunterCiCD/backend/backend-app
-            npm install
-            npm run start:dev
-           
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Clone or Update Project on Server
+        run: |
+          sshpass -p "d9de659eeac2dfde" ssh -o StrictHostKeyChecking=no root@$68.66.251.93 "
+          if [ -d /newCi ]; then
+              cd /newCi && git pull;
+          else
+              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /newCi;
+          fi
+          "
