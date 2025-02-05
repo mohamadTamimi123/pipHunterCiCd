@@ -22,3 +22,12 @@ jobs:
               git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /newCi;
           fi
           "
+
+
+      - name: Docker up
+        run: |
+          cd /newCi
+          docker stop $(docker ps -a -q)
+          docker rm $(docker ps -a -q)
+          docker-compose up
+
