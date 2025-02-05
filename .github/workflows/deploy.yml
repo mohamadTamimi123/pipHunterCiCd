@@ -20,11 +20,9 @@ jobs:
           password: d9de659eeac2dfde
           port : 7822
           script: |
-            mkdir -p /var/www/html/cicd
-            rsync -avz ./ /var/www/html/cicd/
-            cd /var/www/html/cicd
-            docker-compose down
-            docker-compose up
+             cd /app
+             git reset --hard HEAD^
+             git pull
             # sudo apt-get update && sudo apt-get install -y nodejs npm  (برای نصب nodejs و npm)
             # npm install  (برای نصب وابستگی های پروژه)
             # sudo systemctl restart nginx # یا هر سرویس دیگری که پروژه شما از آن استفاده می‌کند.
