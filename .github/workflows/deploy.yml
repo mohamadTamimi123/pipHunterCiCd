@@ -15,7 +15,7 @@ jobs:
 
       - name: Clone or Update Project on Server
         run: |
-          sshpass -p "d9de659eeac2dfde" ssh -o StrictHostKeyChecking=no root@$68.66.251.93 "
+          sshpass -p "d9de659eeac2dfde" ssh -o StrictHostKeyChecking=no -p 7822 root@$68.66.251.93 "
           if [ -d /newCi ]; then
               cd /newCi && git pull;
           else
