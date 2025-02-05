@@ -22,6 +22,7 @@ jobs:
           script: |
             cd /cicd/pipCiCD
             git fetch
-            # sudo apt-get update && sudo apt-get install -y nodejs npm  (برای نصب nodejs و npm)
+            docker-compose dowm
+            docker-compose up
             # npm install  (برای نصب وابستگی های پروژه)
             # sudo systemctl restart nginx # یا هر سرویس دیگری که پروژه شما از آن استفاده می‌کند.
