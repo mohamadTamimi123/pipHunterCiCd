@@ -1,14 +1,62 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:14-alpine
     ports:
       - 5432:5432
     volumes:
-      - ~/apps/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=S3cret
-      - POSTGRES_USER=citizix_user
-      - POSTGRES_DB=citizix_db
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - mynetwork
+
+  backend:
+    build:
+      context: ./backend/Express-app
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8087"
+    volumes:
+      - ./backend/Express-app:/usr/src/app  # فقط فایل‌های ضروری رو mount کنید
+      - node_modules:/usr/src/app/node_modules  # node_modules رو volume کنید
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    depends_on:
+      - postgres
+    restart: always
+    networks:
+      - mynetwork
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]  # فرض بر اینکه یک endpoint health دارید
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=root
+      - HTTP_PASSWORD=qwerty
+    ports:
+      - 8081:8081
+
+    depends_on:
+      - redis
 
   pgadmin:
     image: dpage/pgadmin4
@@ -24,27 +72,10 @@ services:
 
     ports:
       - 3011:6379
+volumes:
+  postgres_data:
+  node_modules:
 
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-      - HTTP_USER=root
-      - HTTP_PASSWORD=qwerty
-    ports:
-      - 8081:8081
-
-    depends_on:
-      - redis
-
-
-  backend:
-    build:
-      context: ./backend/Express-app  # مسیر دایرکتوری فعلی
-      dockerfile: Dockerfile  # نام فایل Dockerfile
-    ports:
-      - "8084:8084"  # نقشه‌برداری پورت
-    volumes:
-      - .:/usr/src/app  # همگام‌سازی فایل‌های محلی
-    environment:
-      NODE_ENV: development  # می‌توانید متغیرهای دیگر نیز اضافه کنید
+networks:
+  mynetwork:
+    driver: bridge

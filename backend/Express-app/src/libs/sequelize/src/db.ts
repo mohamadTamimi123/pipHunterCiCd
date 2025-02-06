@@ -6,8 +6,8 @@ import RoleModel from "../../../UserService/model/role.model";
 import ticketModel from "../../../TicketService/model/ticket.model";
 import Ticket_userModel from "../../../TicketService/model/ticket_user.model";
 
-const sequelize = new Sequelize('citizix_db', 'citizix_user', 'S3cret', {
-  host: 'localhost',
+const sequelize = new Sequelize('citizix_db' ,'citizix_user' , "S3cret" ,{
+  host: process.env.POSTGRES_HOST,
   dialect: 'postgres'/* one of 'mysql' | 'postgres' | 'sqlite' | 'mariadb' | 'mssql' | 'db2' | 'snowflake' | 'oracle' */
 });
 

@@ -2,7 +2,7 @@
 FROM node:22
 
 # تنظیم دایرکتوری کاری
-WORKDIR /usr/src/app
+WORKDIR ./
 
 # کپی کردن package.json و package-lock.json
 COPY package*.json ./
