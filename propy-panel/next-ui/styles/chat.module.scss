@@ -1,0 +1,19 @@
+.main_pos{
+
+ .chat_admin::after{
+  content: " ";
+  position: absolute;
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 100%;
+  background: aliceblue;
+  top: 30px;
+  right: 0px;
+ }
+ .chat_user{
+
+ }
+
+}
+

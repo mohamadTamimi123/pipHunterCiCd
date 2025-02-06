@@ -72,6 +72,15 @@ services:
 
     ports:
       - 3011:6379
+
+  panel :
+    build:
+      context: ./propy-panel/next-ui
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+
+
 volumes:
   postgres_data:
   node_modules:
