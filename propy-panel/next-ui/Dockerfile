@@ -15,7 +15,7 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # تعریف پورت
-EXPOSE 4001
+EXPOSE 3000
 
 # دستور برای اجرای اپلیکیشن
 CMD ["npm", "run", "dev"]
