@@ -14,6 +14,7 @@ RUN npm install --legacy-peer-deps
 # کپی کردن بقیه کد
 COPY . .
 
+RUN npx next telemetry disable
 RUN npm run build
 
 # تعریف پورت
