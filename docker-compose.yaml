@@ -78,7 +78,7 @@ services:
       context: ./propy-panel/next-ui
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "4000:3000"
 
 
 volumes:
