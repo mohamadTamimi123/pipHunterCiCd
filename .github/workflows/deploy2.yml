@@ -38,6 +38,7 @@ jobs:
       - name: Manage Docker Containers
         run: |
           sshpass -p "d9de659eeac2dfde" ssh -o StrictHostKeyChecking=no -p 7822 root@68.66.251.93 "
+          cd /newCi && docker-compose down;
           docker stop $(docker ps -aq) && docker rm $(docker ps -aq);
-          cd /newCi && docker-compose up -d;
+          docker-compose up -d;
           "
