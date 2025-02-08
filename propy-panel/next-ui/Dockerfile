@@ -1,8 +1,7 @@
-# استفاده از تصویر رسمی Node.js به عنوان پایه
 FROM node:22
 
 # تنظیم دایرکتوری کاری
-WORKDIR ./
+WORKDIR /app
 
 # کپی کردن package.json و package-lock.json
 COPY package*.json ./
@@ -13,10 +12,10 @@ RUN npm install --legacy-peer-deps
 # کپی کردن بقیه کد
 COPY . .
 
-RUN node --heap-prof node_modules/next/dist/bin/next build
+RUN npm run lint
 
-EXPOSE 4000
+RUN npm run build
 
-CMD node --heap-prof node_modules/next/dist/bin/next start -p 4000
+EXPOSE 3000
 
-
+CMD npm run start

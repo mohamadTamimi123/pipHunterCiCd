@@ -18,7 +18,7 @@ COPY .env.example .env
 RUN npm run build
 
 # تعریف پورت
-EXPOSE 8084
+EXPOSE 8087
 
 # دستور برای اجرای اپلیکیشن
 CMD npm run start:prod

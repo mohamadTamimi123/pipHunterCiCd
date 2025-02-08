@@ -85,7 +85,7 @@ export const Register = () => {
 
 
         },
-        [router]
+        []
     );
 
 

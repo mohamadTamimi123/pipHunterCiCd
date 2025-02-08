@@ -24,7 +24,7 @@ export default function Profile() {
             // await createAuthCookie();
             // router.replace("/");
         },
-        [router]
+        []
     );
 
     return <div className="h-full lg:px-6">

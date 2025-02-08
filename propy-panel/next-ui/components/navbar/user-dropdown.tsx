@@ -64,7 +64,7 @@ export const UserDropdown = () => {
 
 
 
-  }, []);
+  }, [handleLogout]);
 
 
   return (

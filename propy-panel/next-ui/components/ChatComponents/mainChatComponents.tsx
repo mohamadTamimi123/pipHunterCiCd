@@ -45,11 +45,11 @@ export default function MainChatComponents() {
 
         }
 
-        const token = getToken().catch(console.error);
+        getToken().catch(console.error);
 
 
 
-    }, []);
+    }, [msg]);
 
 
 
@@ -63,7 +63,7 @@ export default function MainChatComponents() {
 
                     // @ts-ignore
                     msg.map((item) => {
-                        return <div className={""}>
+                        return <div key={item.id} className={""}>
 
                             {item.description}
 

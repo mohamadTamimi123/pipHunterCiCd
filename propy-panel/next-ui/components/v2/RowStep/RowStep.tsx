@@ -52,6 +52,7 @@ function CheckIcon(props: ComponentProps<"svg">) {
     );
 }
 
+// eslint-disable-next-line react/display-name
 export const RowSteps = React.forwardRef<HTMLButtonElement, RowStepsProps>(
     (
         {
