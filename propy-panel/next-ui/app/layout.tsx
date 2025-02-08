@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
-import { fontSans , kalameFont} from "@/config/fonts";
+import { kalameFont} from "@/config/fonts";
 import clsx from "clsx";
 import {Bounce, ToastContainer} from "react-toastify";
 
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en'>
-      <body className={clsx("font-sans antialiased", fontSans.className , kalameFont.variable)}>
+      <body className={clsx("antialiased",  kalameFont.variable)}>
         <Providers>
             <ToastContainer
                 position="bottom-center"

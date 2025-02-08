@@ -62,7 +62,7 @@ export default function MainChatComponents() {
                 pending ? <Spinner /> :
 
                     // @ts-ignore
-                    msg?.map((item:any) => {
+                    msg.map((item) => {
                         return <div className={""}>
 
                             {item.description}

@@ -120,7 +120,7 @@ export const Register = () => {
 
 
 
-    function signUpGoogle(b:any){
+    function signUpGoogle(b : any){
 
 
         alert("satart")
