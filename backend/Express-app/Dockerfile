@@ -13,6 +13,8 @@ RUN npm install
 # کپی کردن بقیه کد
 COPY . .
 
+COPY .env.example .env
+
 RUN npm run build
 
 # تعریف پورت
