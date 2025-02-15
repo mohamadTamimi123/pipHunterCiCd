@@ -27,10 +27,10 @@ jobs:
       - name: Clone or Update Project on Server
         run: |
           sshpass -p "%MWZJWkhS\$GW" ssh -o StrictHostKeyChecking=no -p 7822 root@68.66.251.93 "
-          if [ -d /var/www ]; then
-              cd /var/www && git pull;
+          if [ -d /app/www ]; then
+              cd /app/www && git pull;
           else
-              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /var/www;
+              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /app/www;
           fi
           "
 
