@@ -6,7 +6,9 @@ import RoleModel from "../../../UserService/model/role.model";
 import ticketModel from "../../../TicketService/model/ticket.model";
 import Ticket_userModel from "../../../TicketService/model/ticket_user.model";
 
+
 const sequelize = new Sequelize(
+    // @ts-ignore
     process.env.POSTGRES_DB,      // نام دیتابیس
     process.env.POSTGRES_USER,    // نام کاربری
     process.env.POSTGRES_PASSWORD, // رمز عبور
