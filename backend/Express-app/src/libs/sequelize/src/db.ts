@@ -6,10 +6,24 @@ import RoleModel from "../../../UserService/model/role.model";
 import ticketModel from "../../../TicketService/model/ticket.model";
 import Ticket_userModel from "../../../TicketService/model/ticket_user.model";
 
-const sequelize = new Sequelize('citizix_db' ,'citizix_user' , "S3cret" ,{
-  host: process.env.POSTGRES_HOST,
-  dialect: 'postgres'/* one of 'mysql' | 'postgres' | 'sqlite' | 'mariadb' | 'mssql' | 'db2' | 'snowflake' | 'oracle' */
-});
+const sequelize = new Sequelize(
+    process.env.POSTGRES_DB,      // نام دیتابیس
+    process.env.POSTGRES_USER,    // نام کاربری
+    process.env.POSTGRES_PASSWORD, // رمز عبور
+    {
+      host: process.env.POSTGRES_HOST, // میزبان دیتابیس
+      dialect: 'postgres', // نوع دیتابیس
+      pool: { // تنظیمات pool برای بهینه‌سازی اتصال‌ها
+        max: 5,  // حداکثر تعداد اتصالات
+        min: 0,  // حداقل تعداد اتصالات
+        acquire: 30000, // حداکثر زمان قبل از خطای Timeout در میلی‌ثانیه
+        idle: 10000     // مدت زمان بیکاری قبل از قطع اتصال
+      },
+      retry: { // تنظیم تلاش مجدد هنگام خطا در اتصال
+        max: 3 // تعداد دفعات تلاش مجدد
+      }
+    }
+);
 
 const User = userModel(sequelize)
 const Role = RoleModel(sequelize)
