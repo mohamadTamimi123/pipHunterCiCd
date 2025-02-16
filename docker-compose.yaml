@@ -40,11 +40,7 @@ services:
     restart: always
     networks:
       - mynetwork
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]  # فرض بر اینکه یک endpoint health دارید
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
 
   redis-commander:
     image: rediscommander/redis-commander:latest
