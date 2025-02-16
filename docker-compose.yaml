@@ -25,7 +25,7 @@ services:
       context: ./backend/Express-app
       dockerfile: Dockerfile
     ports:
-      - "8087:8084"
+      - "8087:8087"
     volumes:
       - ./backend/Express-app:/usr/src/app  # فقط فایل‌های ضروری رو mount کنید
       - node_modules:/usr/src/app/node_modules  # node_modules رو volume کنید
