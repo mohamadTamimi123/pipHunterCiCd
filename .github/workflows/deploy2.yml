@@ -31,10 +31,10 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p $SSH_PORT root@$SSH_HOST "
-          if [ -d /app ]; then
-              cd /app && git pull;
+          if [ -d /app/www ]; then
+              cd /app/www && git pull;
           else
-              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /app;
+              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /app/www;
           fi
           "
 
@@ -46,7 +46,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p $SSH_PORT root@$SSH_HOST "
-          cd /app && docker-compose down;
+          cd /app/www && docker-compose down;
           docker stop $(docker ps -aq) && docker rm $(docker ps -aq);
           docker-compose up -d;
           "
