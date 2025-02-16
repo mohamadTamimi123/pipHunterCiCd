@@ -19,26 +19,34 @@ jobs:
         with:
           node-version: '22'
 
-      # مرحله 4: نصب sshpass
+      # مرحله 3: نصب sshpass
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 
-      # مرحله 5: ارسال پروژه به سرور
+      # مرحله 4: ارسال پروژه به سرور
       - name: Clone or Update Project on Server
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          sshpass -p "%MWZJWkhS\$GW" ssh -o StrictHostKeyChecking=no -p 7822 root@68.66.251.93 "
-          if [ -d /app/www ]; then
-              cd /app/www && git pull;
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p $SSH_PORT root@$SSH_HOST "
+          if [ -d /app ]; then
+              cd /app && git pull;
           else
-              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /app/www;
+              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /app;
           fi
           "
 
-      # مرحله 6: اجرای docker-compose up
+      # مرحله 5: مدیریت کانتینرهای Docker
       - name: Manage Docker Containers
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          sshpass -p "%MWZJWkhS\$GW" ssh -o StrictHostKeyChecking=no -p 7822 root@68.66.251.93 "
-          cd /app/www && docker-compose down;
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p $SSH_PORT root@$SSH_HOST "
+          cd /app && docker-compose down;
           docker stop $(docker ps -aq) && docker rm $(docker ps -aq);
           docker-compose up -d;
           "
