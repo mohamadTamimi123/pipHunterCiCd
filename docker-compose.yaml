@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:14-alpine
     ports:
-      - 5432:5432
+      - 5431:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -31,10 +31,11 @@ services:
       - node_modules:/usr/src/app/node_modules  # node_modules رو volume کنید
     environment:
       - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
+      - POSTGRES_PORT=5431
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - PORT=8087
     depends_on:
       - postgres
     restart: always
