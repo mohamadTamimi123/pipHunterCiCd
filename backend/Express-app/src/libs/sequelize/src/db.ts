@@ -5,7 +5,7 @@ import User_roleModel from "../../../UserService/model/user_role.model";
 import RoleModel from "../../../UserService/model/role.model";
 import ticketModel from "../../../TicketService/model/ticket.model";
 import Ticket_userModel from "../../../TicketService/model/ticket_user.model";
-
+import 'dotenv/config'
 
 const sequelize = new Sequelize(
     // @ts-ignore
