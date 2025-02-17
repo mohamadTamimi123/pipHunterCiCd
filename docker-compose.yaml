@@ -67,7 +67,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: user-name@domain-name.com
       PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD}
-
+    secrets:
+      - postgres_password
 
   panel:
     build:
@@ -119,7 +120,10 @@ volumes:
   redis_data:
   redisinsight_data:
 
-
 networks:
   mynetwork:
     driver: bridge
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password
