@@ -8,7 +8,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+      - POSTGRES_PASSWORD_FILE=${POSTGRES_PASSWORD}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
     secrets:
@@ -119,13 +119,6 @@ volumes:
   redis_data:
   redisinsight_data:
 
-secrets:
-  postgres_password:
-    file: ./secrets/postgres_password
-  pgadmin_password:
-    file: ./secrets/pgadmin_password
-  backend_postgres_password:
-    file: ./secrets/backend_postgres_password
 
 networks:
   mynetwork:
