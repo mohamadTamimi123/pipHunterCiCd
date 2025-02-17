@@ -4,13 +4,15 @@ services:
   postgres:
     image: postgres:14-alpine
     ports:
-      - 5431:5432
+      - 127.0.0.1:5431:5432 # فقط دسترسی لوکال
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
+    secrets:
+      - postgres_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -20,28 +22,20 @@ services:
     networks:
       - mynetwork
 
-  backend:
-    build:
-      context: ./backend/Express-app
-      dockerfile: Dockerfile
+  redis:
+    image: redis:7.4.0-alpine
+    container_name: redis
     ports:
-      - "8087:8087"
+      - "127.0.0.1:6379:6379"  # فقط لوکال
     volumes:
-      - ./backend/Express-app:/usr/src/app  # فقط فایل‌های ضروری رو mount کنید
-      - node_modules:/usr/src/app/node_modules  # node_modules رو volume کنید
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5431
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - PORT=8087
-    depends_on:
-      - postgres
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"]
+      interval: 10s
+      retries: 5
     restart: always
     networks:
       - mynetwork
-
 
   redis-commander:
     image: rediscommander/redis-commander:latest
@@ -50,37 +44,90 @@ services:
       - HTTP_USER=root
       - HTTP_PASSWORD=qwerty
     ports:
-      - 8081:8081
-
+      - "127.0.0.1:8081:8081" # فقط دسترسی لوکال
     depends_on:
       - redis
+
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "127.0.0.1:8001:8001" # فقط لوکال
+    volumes:
+      - redisinsight_data:/db
+    depends_on:
+      - redis
+    networks:
+      - mynetwork
 
   pgadmin:
     image: dpage/pgadmin4
     ports:
-      - 5050:80
+      - "127.0.0.1:5050:80"  # فقط دسترسی لوکال
     environment:
       PGADMIN_DEFAULT_EMAIL: user-name@domain-name.com
-      PGADMIN_DEFAULT_PASSWORD: strong-password
+      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/pgadmin_password
+    secrets:
+      - pgadmin_password
 
-  redis:
-    image: redis:latest
-    command: redis-server
-
-    ports:
-      - 3011:6379
-
-  panel :
+  panel:
     build:
       context: ./propy-panel/next-ui
       dockerfile: Dockerfile
     ports:
-      - "4000:3000"
+      - "127.0.0.1:4000:3000" # فقط لوکال
+    networks:
+      - mynetwork
+    restart: always
 
+  backend:
+    build:
+      context: ./backend/Express-app
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8087:8087"  # فقط لوکال
+    volumes:
+      - ./backend/Express-app:/usr/src/app  # فقط فایل‌های ضروری را mount کنید
+      - node_modules:/usr/src/app/node_modules  # volume برای node_modules
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD_FILE=/run/secrets/backend_postgres_password
+      - POSTGRES_DB=${POSTGRES_DB}
+      - PORT=8087
+    secrets:
+      - backend_postgres_password
+    depends_on:
+      - postgres
+    restart: always
+    networks:
+      - mynetwork
+
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000" # فقط لوکال
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
 
 volumes:
   postgres_data:
   node_modules:
+  portainer_data:
+  redis_data:
+  redisinsight_data:
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password
+  pgadmin_password:
+    file: ./secrets/pgadmin_password
+  backend_postgres_password:
+    file: ./secrets/backend_postgres_password
 
 networks:
   mynetwork:
