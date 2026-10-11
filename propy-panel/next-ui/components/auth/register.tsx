@@ -1,320 +1,92 @@
 "use client";
 
-import {createAuthCookie} from "@/actions/auth.action";
-import {RegisterSchema} from "@/helpers/schemas";
-import {RegisterFormType} from "@/helpers/types";
-import {Button, Input} from "@heroui/react";
-import {Formik} from "formik";
+import { Button, Checkbox, Divider, Input } from "@heroui/react";
 import Link from "next/link";
-import {useRouter} from "next/navigation";
-import {useCallback, useState} from "react";
-import GoogleButton from "react-google-button";
-import {GoogleLogin, useGoogleLogin} from "@react-oauth/google";
-import {Divider} from "@heroui/divider";
-import {LineMdEmailPlusTwotone} from "@/components/v2/icons/EmailIcon";
-import {Icon} from "@iconify/react";
-import {jwtDecode} from "jwt-decode";
-import {RowSteps} from "@/components/v2/RowStep/RowStep";
-import {InputOtp} from "@heroui/input-otp";
-import {toast} from "react-toastify";
-import FadeIn from "react-fade-in";
-import {BackIcon} from "@/components/v2/icons/BackIcon";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { api, setToken } from "@/lib/api";
+import { GoogleButton } from "./google-button";
+import { OtpStep } from "./otp-step";
 
+const SITE_URL = process.env.SITE_URL || "http://localhost:3000";
 
 export const Register = () => {
-    const router = useRouter();
+  const router = useRouter();
+  const [form, setForm] = useState({ fullName: "", email: "", password: "", confirm: "" });
+  const [accepted, setAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [uid, setUid] = useState<string | null>(null);
 
-    const initialValues: RegisterFormType = {
-        name: "Acme",
-        email: "admin@acme.com",
-        password: "admin",
-        confirmPassword: "admin",
-    };
-    const [value, setValue] = useState("");
-    const [inLoad, setInLoad] = useState(false)
+  const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
-    const [uid, setUid] = useState()
+  const finish = (token: string) => {
+    setToken(token);
+    toast.success("به پیپ‌هانتر خوش آمدید!");
+    router.replace("/buy");
+    router.refresh();
+  };
 
-    const [inDevelop, setInDevelop] = useState(0)
-
-    const handleRegister = useCallback(
-        async (values: RegisterFormType) => {
-            // `values` contains name, email & password. You can use provider to register user
-            //   setInDevelop(2)
-            setInLoad(true)
-
-
-
-
-            const data = {
-                username: values.email,
-                password: values.password
-            }
-            fetch(`${process.env.API_PATH}/api/v1/auth/register`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(data)
-                }
-            ).then(res => {
-                setInLoad(false)
-                if (res.status === 403) {
-                    toast.error("با این ایمیل قبلا ثبت نام شده !")
-
-                }
-
-                return res.json()
-
-            }).then(data => {
-
-                if (data.success) {
-                    setInDevelop(2)
-                    setUid(data.data.uid)
-
-                }
-
-                console.log(data)
-                // setInDevelop(2)
-                // createAuthCookie(data.data);
-                // router.replace("/");
-
-
-            })
-
-
-        },
-        []
-    );
-
-
-    // @ts-ignore
-    const login = useGoogleLogin({
-        onSuccess: credentialResponse => {
-            console.log(credentialResponse);
-            console.log(jwtDecode(credentialResponse.access_token))
-        },
-        auto_select: true
-    });
-
-
-    function checkOtp() {
-        console.log("start")
-        setInLoad(true)
-        fetch(`${process.env.API_PATH}/api/v1/auth/otp` ,{
-            method : "POST" ,
-            headers : {
-                "Content-Type": "application/json",
-            },
-            body : JSON.stringify({uid : uid , code : value })
-        }).then(res => res.json()).then(data => {
-
-            createAuthCookie(data.data);
-            router.replace("/");
-        })
-        // setValue()
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.password.length < 8) return toast.error("رمز عبور باید حداقل ۸ کاراکتر باشد");
+    if (form.password !== form.confirm) return toast.error("رمز عبور و تکرار آن یکسان نیست");
+    if (!accepted) return toast.error("لطفا قوانین و مقررات را بپذیرید");
+    setLoading(true);
+    try {
+      const res = await api<{ uid: string }>("/auth/register", {
+        method: "POST",
+        body: { fullName: form.fullName, email: form.email, password: form.password },
+        auth: false,
+      });
+      toast.success("کد تایید به ایمیل شما ارسال شد");
+      setUid(res.uid);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  if (uid) return <OtpStep uid={uid} email={form.email} onVerified={finish} onBack={() => setUid(null)} />;
 
-
-
-
-    function signUpGoogle(b : any){
-
-
-        alert("satart")
-
-        fetch(`${process.env.API_PATH}/api/v1/auth-google/google` ,{
-            method : "POST" ,
-            headers : {
-                "Content-Type": "application/json",
-            },
-            body : JSON.stringify({cred : b})
-        })
-            .then(res => {
-                console.log(res)
-                setInLoad(false)
-                if (res.status === 403) {
-                    toast.error("با این ایمیل قبلا ثبت نام شده !")
-
-                }
-                return res.json()
-
-            })
-            .then(data => {
-                createAuthCookie(data.data);
-                router.replace("/");
-            })
-
-    }
-
-    return (
+  return (
+    <form onSubmit={submit} className="w-full flex flex-col gap-4">
+      <div className="text-center mb-2">
+        <h2 className="text-2xl font-bold">ایجاد حساب کاربری</h2>
+        <p className="text-sm text-default-500 mt-2">در کمتر از یک دقیقه ثبت نام کنید و اولین چالش خود را شروع کنید</p>
+      </div>
+      <Input variant="bordered" label="نام و نام خانوادگی" value={form.fullName} onValueChange={set("fullName")} isRequired />
+      <Input variant="bordered" label="ایمیل" type="email" value={form.email} onValueChange={set("email")} isRequired classNames={{ input: "ltr text-left" }} />
+      <Input variant="bordered" label="رمز عبور" description="حداقل ۸ کاراکتر" type="password" value={form.password} onValueChange={set("password")} isRequired classNames={{ input: "ltr text-left" }} />
+      <Input variant="bordered" label="تکرار رمز عبور" type="password" value={form.confirm} onValueChange={set("confirm")} isRequired classNames={{ input: "ltr text-left" }} />
+      <Checkbox size="sm" isSelected={accepted} onValueChange={setAccepted}>
+        <span className="text-sm">
+          <a href={`${SITE_URL}/terms`} target="_blank" className="text-primary">
+            قوانین و مقررات
+          </a>{" "}
+          پیپ‌هانتر را مطالعه کرده‌ام و می‌پذیرم
+        </span>
+      </Checkbox>
+      <Button type="submit" color="primary" isLoading={loading} size="lg">
+        ثبت نام
+      </Button>
+      {process.env.GOOGLE_CLIENT_ID && (
         <>
-            <FadeIn>
-                <div className='relative text-center text-[25px] font-bold mb-12'>
-                    <h1>
-                        ثـبـتـــ نـام
-                    </h1>
-                </div>
-            </FadeIn>
-
-            <>
-                {inDevelop === 0 &&
-                    <FadeIn className={"w-80"}>
-                        <GoogleLogin
-                            onSuccess={credentialResponse => {
-                                // console.log(credentialResponse);
-                                // @ts-ignore
-
-                                signUpGoogle(credentialResponse.credential)
-                                // console.log(jwtDecode(credentialResponse.credential));
-                            }}
-                            onError={() => {
-                                console.log('Login Failed');
-                            }}
-                        />
-
-
-                        <div className="flex items-center gap-4 py-2 mt-4 mb-4">
-                            <Divider className="flex-1"/>
-                            <p className="shrink-0 text-tiny text-default-500">یـا</p>
-                            <Divider className="flex-1"/>
-                        </div>
-
-
-                        <Button
-                            variant={"bordered"}
-                            startContent={< LineMdEmailPlusTwotone/>}
-                            onClick={() => setInDevelop(1)}
-                            className={"w-full"} color={"primary"}>
-                            با ایمیل
-                        </Button>
-                    </FadeIn>
-
-                }
-            </>
-            <>
-                {
-                    inDevelop === 1 &&
-                    <FadeIn className={"w-96"}>
-
-                        <Formik
-                            initialValues={initialValues}
-                            validationSchema={RegisterSchema}
-                            onSubmit={handleRegister}>
-                            {({values, errors, touched, handleChange, handleSubmit}) => (
-                                <>
-                                    <div className='flex flex-col w-1/2 gap-4 mb-4 w-full'>
-
-                                        <Input
-                                            variant='bordered'
-                                            label='ایـمـیـل'
-                                            type='email'
-                                            value={values.email}
-                                            isInvalid={!!errors.email && !!touched.email}
-                                            errorMessage={errors.email}
-                                            onChange={handleChange("email")}
-                                        />
-                                        <Input
-                                            variant='bordered'
-                                            label='گـذرواژه'
-                                            type='password'
-                                            value={values.password}
-                                            isInvalid={!!errors.password && !!touched.password}
-                                            errorMessage={errors.password}
-                                            onChange={handleChange("password")}
-                                        />
-                                        <Input
-                                            variant='bordered'
-                                            label='تـکـرار رمـز عـبـور'
-                                            type='password'
-                                            value={values.confirmPassword}
-                                            isInvalid={
-                                                !!errors.confirmPassword && !!touched.confirmPassword
-                                            }
-                                            errorMessage={errors.confirmPassword}
-                                            onChange={handleChange("confirmPassword")}
-                                        />
-                                    </div>
-
-                                    <Button
-                                        className={"w-full mt-4"}
-                                        isLoading={inLoad}
-                                        onPress={() => handleSubmit()}
-                                        variant='flat'
-                                        color='primary'
-                                        startContent={< LineMdEmailPlusTwotone/>}
-                                    >
-                                        ثـبـتـ نـام
-                                    </Button>
-
-
-                                    <div className="flex items-center gap-4 py-2 mt-4 mb-4">
-                                        <Divider className="flex-1"/>
-                                        <p className="shrink-0 text-tiny text-default-500">یـا</p>
-                                        <Divider className="flex-1"/>
-                                    </div>
-                                   <Button
-
-                                       onClick={()=>setInDevelop(0)} startContent={<Icon icon="line-md:arrow-small-right" width="24" height="24" />} className={"w-full"} variant={"bordered"}>
-
-                                       بازگشت
-                                   </Button>
-                                </>
-                            )}
-                        </Formik>
-
-
-                    </FadeIn>
-                }
-
-
-            </>
-            <>
-                {
-                    inDevelop === 2 &&
-                    <FadeIn className={"w-96 "}>
-
-                        <div className={"justify-center ltr flex"}>
-                            <InputOtp length={4} value={value} onValueChange={setValue}/>
-                        </div>
-
-                        <Button
-                            className={"w-full mt-4"}
-                            startContent={< LineMdEmailPlusTwotone/>}
-                            isLoading={inLoad}
-                            variant='flat'
-                            color='primary'
-                            onPress={() => checkOtp()}
-                        >
-                            ثـبـتـ نـام
-                        </Button>
-                        <div className="flex items-center gap-4 py-2 mt-4 mb-4">
-                            <Divider className="flex-1"/>
-                            <p className="shrink-0 text-tiny text-default-500">یـا</p>
-                            <Divider className="flex-1"/>
-                        </div>
-                        <Button
-
-                            onClick={() => setInDevelop(0)}
-                            startContent={<Icon icon="line-md:arrow-small-right" width="24" height="24"/>}
-                            className={"w-full"} variant={"bordered"}>
-
-                            بازگشت
-                        </Button>
-                    </FadeIn>
-                }
-
-
-            </>
-
-            <div className='absolute font-light bottom-10 text-slate-400 mt-4 text-sm'>
-                از قبل اکانت دارید؟{" "}
-                <Link href='/login' className='font-bold'>
-                    ورود
-                </Link>
-            </div>
+          <div className="flex items-center gap-3 my-1">
+            <Divider className="flex-1" />
+            <span className="text-xs text-default-400">یا</span>
+            <Divider className="flex-1" />
+          </div>
+          <GoogleButton onToken={finish} />
         </>
-    )
+      )}
+      <p className="text-center text-sm text-default-500 mt-2">
+        قبلا ثبت نام کرده‌اید؟{" "}
+        <Link href="/login" className="text-primary font-semibold">
+          وارد شوید
+        </Link>
+      </p>
+    </form>
+  );
 };

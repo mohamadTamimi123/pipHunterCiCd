@@ -1,21 +1,18 @@
-FROM node:22
-
-# تنظیم دایرکتوری کاری
+FROM node:22-slim AS build
 WORKDIR /app
-
-# کپی کردن package.json و package-lock.json
 COPY package*.json ./
-
-# نصب وابستگی‌ها
-RUN npm install --legacy-peer-deps
-
-# کپی کردن بقیه کد
+RUN npm ci --legacy-peer-deps
 COPY . .
-
-RUN npm run lint
-
+# Inlined into the client bundle at build time.
+ARG API_PATH
+ARG SITE_URL
+ARG GOOGLE_CLIENT_ID=""
+ENV API_PATH=$API_PATH SITE_URL=$SITE_URL GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
+FROM node:22-slim
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+COPY --from=build /app ./
 EXPOSE 3000
-
-CMD npm run start
+CMD ["npx", "next", "start", "-p", "3000"]

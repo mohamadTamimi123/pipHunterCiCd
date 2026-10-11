@@ -1,30 +1,22 @@
 import app from './app';
-
-import passport from "passport";
-
-
-import './libs/passportjs/auth'
-import './libs/passportjs/google-strategy'
-
-
-
-
-import {sequelize} from "./libs/sequelize/src/db";
-import config from "./config";
-
+import { config } from './config';
+import { initDb } from './db';
+import { seed } from './db/seed';
+import { startRulesEngine } from './services/challenges';
+import { connectRedis } from './services/redis';
 
 async function main() {
-    try {
+    await initDb();
+    await connectRedis();
+    await seed();
+    if (process.env.RULES_ENGINE !== 'false') await startRulesEngine();
 
-        await sequelize.sync()
-
-        app.listen(config.port, () => {
-            console.log(`Example app listening on port ${config.port}`);
-        });
-    } catch (err) {
-        console.log(err);
-    }
+    app.listen(config.port, () => {
+        console.log(`PipHunter API listening on port ${config.port} (${config.env})`);
+    });
 }
 
-
-main();
+main().catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+});

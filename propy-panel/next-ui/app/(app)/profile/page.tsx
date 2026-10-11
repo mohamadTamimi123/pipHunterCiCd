@@ -1,85 +1,94 @@
 "use client";
-import React, {useCallback} from "react";
-import {Button, Input} from "@heroui/react";
-import {Formik} from "formik";
-import {LoginSchema} from "@/helpers/schemas";
 
-import {LoginFormType} from "@/helpers/types";
-import {useRouter} from "next/navigation";
+import { Button, Card, CardBody, CardHeader, Chip, Input } from "@heroui/react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { Loading, PageHeader } from "@/components/ui";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+import { ROLE, date } from "@/lib/format";
 
+export default function ProfilePage() {
+  const { user, loading, refresh } = useAuth();
+  const [profile, setProfile] = useState({ fullName: "", phone: "" });
+  const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirm: "" });
+  const [saving, setSaving] = useState(false);
+  const [changing, setChanging] = useState(false);
 
-export default function Profile() {
+  useEffect(() => {
+    if (user) setProfile({ fullName: user.fullName || "", phone: user.phone || "" });
+  }, [user]);
 
-    const router = useRouter();
+  if (loading || !user) return <Loading />;
 
-    const initialValues: LoginFormType = {
-        email: "admin@acme.com",
-        password: "admin",
-    };
+  const save = async () => {
+    setSaving(true);
+    try {
+      await api("/auth/profile", { method: "PUT", body: profile });
+      await refresh();
+      toast.success("اطلاعات ذخیره شد");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    const handleLogin = useCallback(
-        async (values: LoginFormType) => {
-            // `values` contains email & password. You can use provider to connect user
+  const changePassword = async () => {
+    if (passwords.newPassword !== passwords.confirm) return toast.error("رمز جدید و تکرار آن یکسان نیست");
+    setChanging(true);
+    try {
+      await api("/auth/change-password", { method: "POST", body: { currentPassword: passwords.currentPassword, newPassword: passwords.newPassword } });
+      setPasswords({ currentPassword: "", newPassword: "", confirm: "" });
+      toast.success("رمز عبور تغییر کرد");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setChanging(false);
+    }
+  };
 
-            // await createAuthCookie();
-            // router.replace("/");
-        },
-        []
-    );
-
-    return <div className="h-full lg:px-6">
-        <div
-            className="flex justify-center gap-4 xl:gap-6 pt-3 px-4 lg:px-0  flex-wrap xl:flex-nowrap sm:pt-10 max-w-[90rem] mx-auto w-full">
-            <div className="mt-6 gap-6 flex flex-col w-full">
-
-                <div className="h-full flex flex-col gap-2">
-                    <h3 className="text-xl font-semibold">اطلاعات پروفایل</h3>
-                    <div className="w-full bg-default-50 shadow-lg rounded-2xl p-6 ">
-
-                        <Formik
-                            initialValues={initialValues}
-                            validationSchema={LoginSchema}
-                            onSubmit={handleLogin}>
-                            {({ values, errors, touched, handleChange, handleSubmit }) => (
-                                <>
-                                    <div className='flex flex-col w-1/2 gap-4 mb-4'>
-                                        <Input
-                                            variant='bordered'
-                                            label='ایمیل'
-                                            type='email'
-                                            value={values.email}
-                                            isInvalid={!!errors.email && !!touched.email}
-                                            errorMessage={errors.email}
-                                            onChange={handleChange("email")}
-                                        />
-                                        <Input
-                                            variant='bordered'
-                                            label='رمز عبور'
-                                            type='password'
-                                            value={values.password}
-                                            isInvalid={!!errors.password && !!touched.password}
-                                            errorMessage={errors.password}
-                                            onChange={handleChange("password")}
-                                        />
-                                    </div>
-
-                                    <Button
-                                        onPress={() => handleSubmit()}
-                                        variant='flat'
-                                        isDisabled={true}
-                                        color='primary'>
-                                        ذخیره
-                                    </Button>
-                                </>
-                            )}
-                        </Formik>
-
-
-                    </div>
-                </div>
-
-
+  return (
+    <>
+      <PageHeader title="حساب کاربری" description="اطلاعات شخصی و امنیت حساب" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card shadow="sm" className="border border-divider">
+          <CardHeader className="flex justify-between">
+            <span className="font-semibold">اطلاعات شخصی</span>
+            <div className="flex gap-2">
+              <Chip size="sm" variant="flat" color={ROLE[user.role].color}>
+                {ROLE[user.role].label}
+              </Chip>
+              {user.isVerified && (
+                <Chip size="sm" variant="flat" color="success">
+                  ایمیل تایید شده
+                </Chip>
+              )}
             </div>
-        </div>
-    </div>
-                }
+          </CardHeader>
+          <CardBody className="flex flex-col gap-4">
+            <Input label="ایمیل" value={user.email} isReadOnly variant="faded" classNames={{ input: "ltr text-left" }} />
+            <Input label="نام و نام خانوادگی" value={profile.fullName} onValueChange={(v) => setProfile({ ...profile, fullName: v })} variant="bordered" />
+            <Input label="شماره موبایل" value={profile.phone} onValueChange={(v) => setProfile({ ...profile, phone: v })} variant="bordered" classNames={{ input: "ltr text-left" }} />
+            <p className="text-xs text-default-400">عضویت از {date(user.createdAt)}</p>
+            <Button color="primary" isLoading={saving} onPress={save} className="self-start">
+              ذخیره تغییرات
+            </Button>
+          </CardBody>
+        </Card>
+
+        <Card shadow="sm" className="border border-divider">
+          <CardHeader className="font-semibold">تغییر رمز عبور</CardHeader>
+          <CardBody className="flex flex-col gap-4">
+            <Input type="password" label="رمز عبور فعلی" value={passwords.currentPassword} onValueChange={(v) => setPasswords({ ...passwords, currentPassword: v })} variant="bordered" classNames={{ input: "ltr text-left" }} />
+            <Input type="password" label="رمز عبور جدید" description="حداقل ۸ کاراکتر" value={passwords.newPassword} onValueChange={(v) => setPasswords({ ...passwords, newPassword: v })} variant="bordered" classNames={{ input: "ltr text-left" }} />
+            <Input type="password" label="تکرار رمز عبور جدید" value={passwords.confirm} onValueChange={(v) => setPasswords({ ...passwords, confirm: v })} variant="bordered" classNames={{ input: "ltr text-left" }} />
+            <Button color="primary" variant="flat" isLoading={changing} isDisabled={!passwords.currentPassword || passwords.newPassword.length < 8} onPress={changePassword} className="self-start">
+              تغییر رمز عبور
+            </Button>
+          </CardBody>
+        </Card>
+      </div>
+    </>
+  );
+}

@@ -1,122 +1,96 @@
 "use client";
 
-import { createAuthCookie } from "@/actions/auth.action";
-import { LoginSchema } from "@/helpers/schemas";
-import { LoginFormType } from "@/helpers/types";
-import { Button, Input } from "@heroui/react";
-import { Formik } from "formik";
+import { Button, Divider, Input } from "@heroui/react";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {useCallback, useState} from "react";
-import {toast} from "react-toastify";
-import {errorTO__handle} from "@/config/errorTO__handle";
-
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { api, ApiError, setToken } from "@/lib/api";
+import { GoogleButton } from "./google-button";
+import { OtpStep } from "./otp-step";
 
 export const Login = () => {
   const router = useRouter();
-    const [pend, setPend] = useState(false)
+  const params = useSearchParams();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [uid, setUid] = useState<string | null>(null);
 
-  const initialValues: LoginFormType = {
-    email: "admin@acme.com",
-    password: "admin",
+  const finish = (token: string) => {
+    setToken(token);
+    const next = params.get("next");
+    router.replace(next && next.startsWith("/") ? next : "/");
+    router.refresh();
   };
 
-  const handleLogin = useCallback(
-    async (values: LoginFormType) => {
-      // `values` contains email & password. You can use provider to connect user
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      finish(await api<string>("/auth/login", { method: "POST", body: { email, password }, auth: false }));
+    } catch (err) {
+      const error = err as ApiError;
+      if (error.code === "NOT_VERIFIED" && error.details?.uid) {
+        toast.info(error.message);
+        setUid(error.details.uid);
+      } else {
+        toast.error(error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const newData = {
-            username : values.email ,
-            password:  values.password
-        }
-
-        setPend(true)
-
-
-
-
-
-      fetch(`${process.env.API_PATH}/api/v1/auth/login` , {
-          method : "POST" ,
-          headers : {
-            "content-type" : "Application/json"
-          } ,
-          body : JSON.stringify(newData)
-      }).then(res => {
-          setPend(false)
-          if (res.ok){
-
-              return res.json()
-          }else {
-            const error = errorTO__handle(res)
-              toast.error(error)
-          }
-
-
-
-      })
-          .then(data => {
-              if (data?.success){
-
-                  createAuthCookie(data.data);
-                  router.replace("/");
-              }else {
-                  // toast.error("خطایی رخ داده!")
-                  // return
-              }
-          })
-    },
-          [router]
-  );
+  if (uid) return <OtpStep uid={uid} email={email} onVerified={finish} onBack={() => setUid(null)} />;
 
   return (
-    <>
-      <div className='text-center text-[25px] font-bold mb-6'>ورود</div>
-
-      <Formik
-        initialValues={initialValues}
-        validationSchema={LoginSchema}
-        onSubmit={handleLogin}>
-        {({ values, errors, touched, handleChange, handleSubmit }) => (
-          <>
-            <div className='flex flex-col w-1/2 gap-4 mb-4'>
-              <Input
-                variant='bordered'
-                label='ایمیل'
-                type='email'
-                value={values.email}
-                isInvalid={!!errors.email && !!touched.email}
-                errorMessage={errors.email}
-                onChange={handleChange("email")}
-              />
-              <Input
-                variant='bordered'
-                label='رمز عبور'
-                type='password'
-                value={values.password}
-                isInvalid={!!errors.password && !!touched.password}
-                errorMessage={errors.password}
-                onChange={handleChange("password")}
-              />
-            </div>
-
-            <Button
-              onPress={() => handleSubmit()}
-              isLoading={pend}
-              variant='flat'
-              color='primary'>
-              ورود
-            </Button>
-          </>
-        )}
-      </Formik>
-
-      <div className='font-light text-slate-400 mt-4 text-sm'>
-        حساب کاربری ندارید ؟{" "}
-        <Link href='/register' className='font-bold'>
-          ثبت نام
+    <form onSubmit={submit} className="w-full flex flex-col gap-4">
+      <div className="text-center mb-2">
+        <h2 className="text-2xl font-bold">ورود به حساب</h2>
+        <p className="text-sm text-default-500 mt-2">برای مدیریت چالش‌ها و حساب‌های فاند وارد شوید</p>
+      </div>
+      <Input variant="bordered" label="ایمیل" type="email" value={email} onValueChange={setEmail} isRequired classNames={{ input: "ltr text-left" }} />
+      <Input
+        variant="bordered"
+        label="رمز عبور"
+        type={show ? "text" : "password"}
+        value={password}
+        onValueChange={setPassword}
+        isRequired
+        classNames={{ input: "ltr text-left" }}
+        endContent={
+          <button type="button" onClick={() => setShow(!show)} className="text-default-400" aria-label="نمایش رمز">
+            {show ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        }
+      />
+      <div className="flex justify-end -mt-1">
+        <Link href="/forgot-password" className="text-xs text-primary">
+          رمز عبور را فراموش کرده‌اید؟
         </Link>
       </div>
-    </>
+      <Button type="submit" color="primary" isLoading={loading} size="lg">
+        ورود
+      </Button>
+      {process.env.GOOGLE_CLIENT_ID && (
+        <>
+          <div className="flex items-center gap-3 my-1">
+            <Divider className="flex-1" />
+            <span className="text-xs text-default-400">یا</span>
+            <Divider className="flex-1" />
+          </div>
+          <GoogleButton onToken={finish} />
+        </>
+      )}
+      <p className="text-center text-sm text-default-500 mt-2">
+        حساب کاربری ندارید؟{" "}
+        <Link href="/register" className="text-primary font-semibold">
+          ثبت نام کنید
+        </Link>
+      </p>
+    </form>
   );
 };

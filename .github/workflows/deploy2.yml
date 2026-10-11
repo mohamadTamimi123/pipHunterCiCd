@@ -1,52 +1,23 @@
 name: Deploy to Server
 
+# Requires the one-time server setup (both repos cloned under /opt/piphunter and deploy/.env filled in).
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # مرحله 1: چک کردن کد از مخزن
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # مرحله 2: نصب Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '22'
-
-      # مرحله 3: نصب sshpass
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 
-      # مرحله 4: ارسال پروژه به سرور
-      - name: Clone or Update Project on Server
+      - name: Pull and rebuild on server
         env:
           SSH_PASS: ${{ secrets.SSH_PASSWORD }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p $SSH_PORT root@$SSH_HOST "
-          if [ -d /app/www ]; then
-              cd /app/www && git pull;
-          else
-              git clone https://github.com/mohamadTamimi123/pipHunterCiCd.git /app/www;
-          fi
-          "
-
-      # مرحله 5: مدیریت کانتینرهای Docker
-      - name: Manage Docker Containers
-        env:
-          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-        run: |
-          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p $SSH_PORT root@$SSH_HOST "
-          cd /app/www && docker-compose down;
-          docker stop $(docker ps -aq) && docker rm $(docker ps -aq);
-          docker-compose up -d;
-          "
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" root@"$SSH_HOST" "/opt/piphunter/pipHunterCiCd/deploy/deploy.sh"

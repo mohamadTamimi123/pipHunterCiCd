@@ -1,24 +1,15 @@
-# استفاده از تصویر رسمی Node.js به عنوان پایه
-FROM node:22
-
-# تنظیم دایرکتوری کاری
-WORKDIR ./
-
-# کپی کردن package.json و package-lock.json
+FROM node:22-slim AS build
+WORKDIR /app
 COPY package*.json ./
-
-# نصب وابستگی‌ها
-RUN npm install
-
-# کپی کردن بقیه کد
+RUN npm ci
 COPY . .
+RUN npm run build && npm prune --omit=dev
 
-COPY .env.example .env
-
-RUN npm run build
-
-# تعریف پورت
-EXPOSE 8087
-
-# دستور برای اجرای اپلیکیشن
-CMD npm run start:prod
+FROM node:22-slim
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY package.json ./
+EXPOSE 8084
+CMD ["node", "dist/server.js"]

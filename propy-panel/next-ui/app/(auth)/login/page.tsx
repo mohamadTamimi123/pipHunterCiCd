@@ -1,8 +1,12 @@
-import React from "react";
+import { Suspense } from "react";
 import { Login } from "@/components/auth/login";
 
-const login = () => {
-  return <Login />;
-};
+export const metadata = { title: "ورود" };
 
-export default login;
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <Login />
+    </Suspense>
+  );
+}

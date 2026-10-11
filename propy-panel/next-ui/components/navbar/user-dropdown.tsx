@@ -1,115 +1,41 @@
-'use client'
-import {
-  Avatar,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-  Navbar,
-  NavbarItem,
-} from "@heroui/react";
-import React, {useCallback, useEffect, useState} from "react";
-import { DarkModeSwitch } from "./darkmodeswitch";
+"use client";
+
+import { Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, NavbarItem, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
-import {deleteAuthCookie, getAuthCookie} from "@/actions/auth.action";
-import {fetch__data} from "@/actions/fetch__handle/example";
-import {errorTO__handle} from "@/config/errorTO__handle";
-import {toast} from "react-toastify";
-import {Spinner} from "@heroui/spinner";
+import React from "react";
+import { useAuth } from "@/lib/auth-context";
+import { ROLE } from "@/lib/format";
+import { DarkModeSwitch } from "./darkmodeswitch";
 
 export const UserDropdown = () => {
   const router = useRouter();
+  const { user, loading, logout } = useAuth();
 
-  const [user, setUser] = useState()
-
-  const handleLogout = useCallback(async () => {
-    await deleteAuthCookie();
-    router.replace("/register");
-  }, [router]);
-
-  useEffect(() => {
-    const getToken = async () => {
-     const token = await getAuthCookie();
-      const server = `${process.env.API_PATH}/api/v1/auth/get-me`
-
-      fetch(server, {
-        method: "GET",
-        headers: {
-          "content-type": "Application/json",
-          Authorization:`bearer ${token}`
-        },
-
-      }).then(res => {
-
-        if (res.ok) {
-          return res.json()
-
-        } else {
-          const errorMassage = errorTO__handle(res)
-
-          toast.error(errorMassage)
-          handleLogout()
-        }
-      }).then(data => {
-        console.log(data)
-        setUser(data.data)
-
-      })
-
-
-
-    }
-
-    const token = getToken().catch(console.error);
-
-
-
-  }, [handleLogout]);
-
+  if (loading || !user) return <Spinner size="sm" />;
 
   return (
-      <>
-        {
-          user ? <Dropdown>
-            <NavbarItem>
-              <DropdownTrigger>
-                <Avatar
-                    as='button'
-                    color='secondary'
-                    size='md'
-                    // src='https://i.pravatar.cc/150?u=a042581f4e29026704d'
-                />
-              </DropdownTrigger>
-            </NavbarItem>
-            <DropdownMenu
-                aria-label='User menu actions'
-                onAction={(actionKey) => console.log({ actionKey })}>
-              <DropdownItem
-                  key='profile'
-                  className='flex flex-col justify-start w-full items-start'>
-                <p>به عنوان وارد شدید</p>
-                <p>{
-                  // @ts-ignore
-                  user?.username}</p>
-              </DropdownItem>
-              <DropdownItem key='settings'>تنظیمات</DropdownItem>
-
-              <DropdownItem
-                  key='logout'
-                  color='danger'
-                  className='text-danger'
-                  onPress={handleLogout}>
-                خروج از حساب
-              </DropdownItem>
-              <DropdownItem key='switch'>
-                <DarkModeSwitch />
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown> : <Spinner />
-        }
-
-
-      </>
-
+    <Dropdown placement="bottom-end">
+      <NavbarItem>
+        <DropdownTrigger>
+          <Avatar as="button" color="primary" size="sm" name={(user.fullName || user.email).slice(0, 1).toUpperCase()} isBordered />
+        </DropdownTrigger>
+      </NavbarItem>
+      <DropdownMenu aria-label="منوی کاربر" onAction={(key) => key === "profile" && router.push("/profile")}>
+        <DropdownSection showDivider>
+          <DropdownItem key="info" isReadOnly className="h-14 gap-2 opacity-100" textValue="info">
+            <p className="font-semibold">{user.fullName || "کاربر پیپ‌هانتر"}</p>
+            <p className="text-xs text-default-500 ltr text-right">{user.email}</p>
+            <p className="text-xs text-primary">{ROLE[user.role]?.label}</p>
+          </DropdownItem>
+        </DropdownSection>
+        <DropdownItem key="profile">حساب کاربری</DropdownItem>
+        <DropdownItem key="theme" isReadOnly textValue="theme" endContent={<DarkModeSwitch />}>
+          حالت تیره
+        </DropdownItem>
+        <DropdownItem key="logout" color="danger" className="text-danger" onPress={logout}>
+          خروج از حساب
+        </DropdownItem>
+      </DropdownMenu>
+    </Dropdown>
   );
 };

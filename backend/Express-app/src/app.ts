@@ -1,38 +1,40 @@
+import cors from 'cors';
 import express, { Request, Response } from 'express';
-import { userRoute } from "./UserService/route/user.route";
-import cors from "cors";
-import bodyParser from "body-parser";
-import passport from 'passport';
-import {ticketRoute} from "./TicketService/route/ticket.route";
-import {googleRoute} from "./UserService/route/google.route";
-
-import Queue from 'bull';
-const emailQueue = new Queue('emailQueue');
-
-
-
+import { config } from './config';
+import { errorMiddleware } from './core/http';
+import { adminRouter } from './routes/admin';
+import { authRouter } from './routes/auth';
+import { paymentsRouter } from './routes/payments';
+import { publicRouter } from './routes/public';
+import { userRouter } from './routes/user';
 
 const app = express();
 
-app.use(express.urlencoded({ extended: false }));
-app.use(cors());
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use(
+    cors({
+        origin: (origin, cb) => cb(null, !origin || config.corsOrigins.includes(origin)),
+    }),
+);
+app.use(express.json({ limit: '1mb' }));
 
-app.use(express.json());
-
-app.use(bodyParser.urlencoded())
-
-// parse application/json
-app.use(bodyParser.json())
-
-app.use(passport.initialize());
-
-app.get('/', (req: Request, res: Response) => {
-    res.send('Hello from setup file');
+app.get('/', (_req: Request, res: Response) => {
+    res.json({ name: 'PipHunter API', status: 'ok' });
+});
+app.get('/health', (_req: Request, res: Response) => {
+    res.json({ status: 'ok' });
 });
 
+app.use('/api/v1', authRouter);
+app.use('/api/v1', publicRouter);
+app.use('/api/v1', paymentsRouter);
+app.use('/api/v1', adminRouter);
+app.use('/api/v1', userRouter);
 
-app.use('/api/v1' , userRoute)
-app.use('/api/v1' , ticketRoute)
-app.use('/api/v1' , googleRoute)
+app.use((_req: Request, res: Response) => {
+    res.status(404).json({ success: false, message: 'مسیر یافت نشد' });
+});
+app.use(errorMiddleware);
 
 export default app;

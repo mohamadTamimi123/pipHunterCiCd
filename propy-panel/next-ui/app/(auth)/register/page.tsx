@@ -1,8 +1,7 @@
-import React from "react";
 import { Register } from "@/components/auth/register";
 
-const register = () => {
-  return <Register />;
-};
+export const metadata = { title: "ثبت نام" };
 
-export default register;
+export default function RegisterPage() {
+  return <Register />;
+}

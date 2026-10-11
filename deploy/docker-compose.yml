@@ -1,0 +1,90 @@
+# Production stack. Expects the site repo cloned next to this repo:
+#   /opt/piphunter/pipHunterCiCd   (this repo)
+#   /opt/piphunter/piphunter-ui
+# Run from this folder: docker compose up -d --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: ../backend/Express-app
+    restart: always
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 8084
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379
+      API_PUBLIC_URL: https://api.${DOMAIN}
+      PANEL_URL: https://panel.${DOMAIN}
+      SITE_URL: https://${DOMAIN}
+      CORS_ORIGINS: https://${DOMAIN},https://www.${DOMAIN},https://panel.${DOMAIN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  panel:
+    build:
+      context: ../propy-panel/next-ui
+      args:
+        API_PATH: https://api.${DOMAIN}
+        SITE_URL: https://${DOMAIN}
+        GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    restart: always
+    depends_on:
+      - backend
+
+  site:
+    build:
+      context: ../../piphunter-ui
+      args:
+        API_PATH: https://api.${DOMAIN}
+        PANEL_URL: https://panel.${DOMAIN}
+    restart: always
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - site
+      - panel
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
